@@ -6,6 +6,8 @@
 cmake_minimum_required(VERSION 2.8.7)
 project(chibi-scheme)
 
+
+
 #
 # Features
 #
@@ -13,12 +15,18 @@ project(chibi-scheme)
 add_definitions(
     # Disable green threads: It depends on non-blocking I/O
     -DSEXP_USE_GREEN_THREADS=0 
+    -DSEXP_USE_INTTYPES=1
 
     -DSEXP_USE_DL=0
     -DBUILDING_DLL)
 
+if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+    add_definitions(-DSEXP_64_BIT=1)
+elseif(CMAKE_SIZEOF_VOID_P EQUAL 4)
+    add_definitions(-DSEXP_64_BIT=0)
+endif()
+
 set(chibi-scheme-exclude-modules-win32
-    lib/chibi/filesystem.sld
     lib/chibi/net.sld
     lib/chibi/process.sld
     lib/chibi/stty.sld
@@ -119,7 +127,10 @@ set(clibin ${CMAKE_CURRENT_BINARY_DIR}/clib-in.txt)
 set(clibout ${CMAKE_CURRENT_BINARY_DIR}/clib.c)
 set(genstatic-helper ${CMAKE_CURRENT_LIST_DIR}/chibi-genstatic-helper.cmake)
 file(WRITE ${clibin} "${genstatic-input}")
-message(STATUS "${slds}")
+
+foreach(e ${slds})
+    list(APPEND slds_dep ${CHIBI_SCHEME_ROOT}/${e})
+endforeach()
 
 add_custom_command(OUTPUT ${clibout}
     COMMAND 
@@ -134,7 +145,7 @@ add_custom_command(OUTPUT ${clibout}
     chibi-scheme-bootstrap
     ${chibi-genstatic}
     ${genstatic-helper}
-    ${slds})
+    ${slds_dep})
 
 #
 # Interpreter
@@ -212,10 +223,11 @@ enable_testing()
 
 set(coretests
     r7rs-tests
-    division-tests
-    r5rs-tests
-    syntax-tests
-    unicode-tests
+    ## Not connected
+    #division-tests
+    #r5rs-tests
+    #syntax-tests
+    #unicode-tests
     ## Require threads
     # lib-tests
     )
